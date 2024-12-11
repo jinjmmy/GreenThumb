@@ -9,21 +9,15 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "DHT20.h"
-#define SOIL_MOISTURE_PIN 32
-
-
 const int lightSensorPin = 39; 
 int lightValue = 0;             
 int minLight = 9999;            
 int maxLight = 0;  
 DHT20 DHT(&Wire1);
-
 // This example downloads the URL "http://arduino.cc/"
 char ssid[50] = "Jimmy"; // your network SSID (name)
 char pass[50] = "jimmy123"; // your network password (use for WPA, or use
-
 const int kNetworkTimeout = 30 * 1000;
-
 const int kNetworkDelay = 1000;
 void nvs_access()
 {
@@ -31,12 +25,10 @@ void nvs_access()
   esp_err_t err = nvs_flash_init();
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
   {
-
     ESP_ERROR_CHECK(nvs_flash_erase());
     err = nvs_flash_init();
   }
   ESP_ERROR_CHECK(err);
-
   // Open
   Serial.printf("\n");
   Serial.printf("Opening Non-Volatile Storage (NVS) handle... ");
@@ -58,7 +50,6 @@ void nvs_access()
     {
     case ESP_OK:
       Serial.printf("Done\n");
-
       break;
     case ESP_ERR_NVS_NOT_FOUND:
       Serial.printf("The value is not initialized yet!\n");
@@ -67,18 +58,14 @@ void nvs_access()
       Serial.printf("Error (%s) reading!\n", esp_err_to_name(err));
     }
   }
-
   // Close
   nvs_close(my_handle);
 }
-
 void setup()
 {
   Serial.begin(9600);
   delay(1000);
-
   nvs_access();
-  pinMode(SOIL_MOISTURE_PIN, INPUT);
   delay(1000);
   Serial.println();
   Serial.println();
@@ -87,13 +74,11 @@ void setup()
   Serial.println(pass);
   WiFi.begin(ssid, pass);
   // WiFi.begin(ssid);
-
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
     Serial.print(".");
   }
-
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
@@ -101,32 +86,18 @@ void setup()
   Serial.println("MAC address: ");
   Serial.println(WiFi.macAddress());
   Serial.println("Type,\tStatus,\tHumidity (%),\tTemperature (C)");
-
   Wire1.begin(21, 22);
 }
-
 void loop()
 {
-  int sensorValue = analogRead(SOIL_MOISTURE_PIN);
-  float moisturePercent = map(sensorValue, 0, 4095, 0, 100);
-  Serial.print("Raw Sensor Value: ");
-  Serial.print(sensorValue);
-  Serial.print(" | Soil Moisture: ");
-  Serial.print(moisturePercent);
-  Serial.println("%");
   int status = DHT.read();
-
   String hum = String(DHT.getHumidity(), 1);
   String temp = String(DHT.getTemperature(), 1);
   lightValue = analogRead(lightSensorPin);
-
   delay(2000);
   int err = 0;
   WiFiClient c;
   HttpClient http(c);
-
-
-
   String url = "/?var=";
   url += "humidity:";
   url += hum;
@@ -136,12 +107,9 @@ void loop()
   url += ",";
   url += "lightValue:";
    url += String(lightValue);
-
   const char *urlCharArray = url.c_str();
-
   // err = http.get(urlCharArray, NULL);
   err = http.get("18.118.155.86", 5000, urlCharArray, NULL);
-
   if (err == 0)
   {
     Serial.println("startedRequest ok");
@@ -150,28 +118,21 @@ void loop()
     {
       Serial.print("Got status code: ");
       Serial.println(err);
-
       err = http.skipResponseHeaders();
       if (err >= 0)
       {
         int bodyLen = http.contentLength();
-
         Serial.println(bodyLen);
         Serial.println();
-
-
         unsigned long timeoutStart = millis();
         char c;
-
         while ((http.connected() || http.available()) && ((millis() - timeoutStart) < kNetworkTimeout))
         {
           if (http.available())
           {
             c = http.read();
-
             Serial.print(c);
             bodyLen--;
-
             timeoutStart = millis();
           }
           else
@@ -198,7 +159,5 @@ void loop()
     Serial.println(err);
   }
   http.stop();
-
-
   delay(2000);
 }
