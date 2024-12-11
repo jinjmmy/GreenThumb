@@ -12,6 +12,10 @@ temperature = "22.3"
 soil_moisture = "60"  
 light_value = "550"  
 
+
+
+# Create the prompt with sensor data and units
+
 prompt = f"""
 I have the following sensor readings:
 - Humidity: {humidity}% (Relative Humidity)
@@ -25,12 +29,13 @@ What should I do to maintain the best conditions for my plant based on these val
 
 try:
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # Use the newer model
+        model="gpt-3.5-turbo",  
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt}
         ]
     )
+
 
     print(response['choices'][0]['message']['content'])
 except openai.error.OpenAIError as e:
