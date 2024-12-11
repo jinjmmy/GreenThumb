@@ -2,6 +2,7 @@ import openai
 from dotenv import load_dotenv
 import os
 
+
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -11,7 +12,10 @@ temperature = "22.3"
 soil_moisture = "60"  
 light_value = "550"  
 
+
+
 # Create the prompt with sensor data and units
+
 prompt = f"""
 I have the following sensor readings:
 - Humidity: {humidity}% (Relative Humidity)
@@ -31,7 +35,8 @@ try:
             {"role": "user", "content": prompt}
         ]
     )
-  
+
+
     print(response['choices'][0]['message']['content'])
 except openai.error.OpenAIError as e:
     print(f"Error occurred: {e}")
