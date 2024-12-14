@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <title>Multi-Value Real-Time Monitoring</title>
+</head>
+<body>
+    
+    <h1>Multi-Value Real-Time Monitoring</h1>
+    <div id="plotlyChart"></div>
+    
+        <form>
+            <label for="plant-type">Plant Type:</label>
+            <input type="text" id="plant-type" name="plant-type"><br><br>
+    
+            <label for="city">City:</label>
+            <input type="text" id="city" name="city"><br><br>
+        </form>
+    
+    <button id="getSuggestionButton">What should I do?</button>
+    <div id="suggestionOutput"></div>
+    <!-- <p>{{ suggestion | safe }}</p> -->
+    <script>
+        // Initialize Socket.IO connection
+        const socket = io();
+
+        // Data arrays
+        const timestamps = [];
+        const temperatures = [];
+        const humidities = [];
+        const lightValues = [];
+        const soilMoistures = [];
+
+        // Listen for new data
+        socket.on('new_data', (data) => {
+            console.log("New data received:", data);
+
+            const timestamp = new Date(data.timestamp * 1000).toLocaleTimeString();
+            timestamps.push(timestamp);
+            temperatures.push(data.temperature);
+            humidities.push(data.humidity);
+            lightValues.push(data.lightValue);
+            soilMoistures.push(data.soilMoisture);
+
+            // Limit data to the last 10 points
+            if (timestamps.length > 10) {
+                timestamps.shift();
+                temperatures.shift();
+                humidities.shift();
+                lightValues.shift();
+                soilMoistures.shift();
+            }
+
+            Plotly.newPlot('plotlyChart', [
+                {
+                    x: timestamps,
+                    y: temperatures,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Temperature (°C)',
+                    line: { shape: 'spline', color: 'red' },
+                    yaxis: 'y',
+                },
+                {
+                    x: timestamps,
+                    y: humidities,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Humidity (%)',
+                    line: { shape: 'spline', color: 'blue' },
+                    yaxis: 'y2',
+                },
+                {
+                    x: timestamps,
+                    y: lightValues,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Light Value',
+                    line: { shape: 'spline', color: 'green' },
+                    yaxis: 'y3',
+                },
+                {
+                    x: timestamps,
+                    y: soilMoistures,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Soil Moisture (%)',
+                    line: { shape: 'spline', color: 'orange' },
+                    yaxis: 'y4',
+                },
+            ], {
+                title: 'Real-Time Monitoring of Environmental Data',
+                xaxis: { title: 'Timestamp' },
+                yaxis: { title: 'Temperature (°C)', side: 'left' },
+                yaxis2: { title: 'Humidity (%)', side: 'right', overlaying: 'y' },
+                yaxis3: { title: 'Light Value', side: 'right', overlaying: 'y', position: 0.85 },
+                yaxis4: { title: 'Soil Moisture (%)', side: 'right', overlaying: 'y', position: 0.95 },
+            });
+        });
+
+        // Button click handler for "What should I do?"
+        document.getElementById('getSuggestionButton').addEventListener('click', async () => {
+            try {
+                const latestData = {
+                    humidity: humidities[humidities.length - 1],
+                    temperature: temperatures[temperatures.length - 1],
+                    lightValue: lightValues[lightValues.length - 1],
+                    soilMoisture: soilMoistures[soilMoistures.length - 1],
+                };
+
+                const queryString = new URLSearchParams(latestData).toString();
+                const response = await fetch(`/get_suggestion?${queryString}`);
+                const suggestion = await response.text();
+                document.getElementById('suggestionOutput').innerText = suggestion;
+            } catch (error) {
+                console.error("Error fetching suggestion:", error);
+                document.getElementById('suggestionOutput').innerText = "An error occurred. Please try again.";
+            }
+        });
+
+        socket.on('connect', () => console.log('Socket.IO connected.'));
+        socket.on('disconnect', () => console.log('Socket.IO disconnected.'));
+    </script>
+</body>
+</html>
